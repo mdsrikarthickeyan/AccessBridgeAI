@@ -134,4 +134,82 @@ class ExampleUnitTest {
         // High score because AIIMS OPD is fully audited and equipped
         assertTrue(score >= 15)
     }
+
+    @Test
+    fun formSimplifier_breaksInstructionsIntoNumberedStepsAndChecklist() {
+        val formText = """
+            GOVERNMENT SCHEME APPLICATION
+            Step 1: Check eligibility of 40% benchmark disability.
+            Step 2: Collect Aadhaar card and doctor certificate.
+            Step 3: Submit application online before 25th October 2026.
+            Required Documents:
+            - Aadhaar Card
+            - UDID Certificate
+            - Bank Passbook
+        """.trimIndent()
+
+        val doc = com.example.service.FormSimplifierService.simplifyDocument(
+            rawText = formText,
+            category = NoticeCategory.GOVERNMENT_FORM,
+            customTitle = "Scheme Application"
+        )
+
+        assertEquals("Scheme Application", doc.title)
+        assertTrue(doc.numberedSteps.isNotEmpty())
+        assertTrue(doc.requiredDocuments.any { it.contains("Aadhaar") })
+        assertTrue(doc.importantDates.any { it.contains("October 2026") })
+        assertTrue(doc.personalChecklist.isNotEmpty())
+        assertEquals(false, doc.personalChecklist.first().isCompleted)
+    }
+
+    @Test
+    fun formSimplifier_flagsAmbiguousPartsRequiringHumanReview() {
+        val ambiguousText = """
+            CIRCULAR ON REGIONAL OFFICE TIMINGS
+            Opening hours vary by district; beneficiaries must confirm timing before travelling.
+            Some stamped text is unreadable or blurry.
+        """.trimIndent()
+
+        val doc = com.example.service.FormSimplifierService.simplifyDocument(
+            rawText = ambiguousText,
+            category = NoticeCategory.PUBLIC_NOTICE
+        )
+
+        assertTrue(doc.ambiguousOrReviewItems.isNotEmpty())
+        assertTrue(doc.ambiguousOrReviewItems.any { it.contains("vary", ignoreCase = true) || it.contains("blurry", ignoreCase = true) })
+    }
+
+    @Test
+    fun accessibilityPreferences_calculatesPlaceMatchScoreAndActiveCount() {
+        val prefs = com.example.model.AccessibilityPreferences(
+            requireStepFree = true,
+            requireRamp = true,
+            requireLift = true,
+            requireTactileGuidance = true
+        )
+
+        assertEquals(4, prefs.activeRequirementCount())
+        assertTrue(prefs.hasAnyFacilityRequirement())
+
+        val aiims = SampleDataProvider.samplePlaces.first { it.id == "place-aiims-02" }
+        val score = prefs.calculatePlaceMatchScore(aiims)
+        // AIIMS has step free, ramp, lift, tactile paving, plus verified badge
+        assertTrue(score >= 12)
+
+        val unAudited = SampleDataProvider.samplePlaces.first { it.id == "place-bengaluru-collectorate-08" }
+        val unAuditedScore = prefs.calculatePlaceMatchScore(unAudited)
+        assertTrue(score > unAuditedScore)
+    }
+
+    @Test
+    fun accessibilityPreferences_respectsDefaultNonDiagnosticValues() {
+        val defaultPrefs = com.example.model.AccessibilityPreferences()
+        assertEquals(false, defaultPrefs.hasAnyFacilityRequirement())
+        assertEquals(0, defaultPrefs.activeRequirementCount())
+        assertEquals(1.0f, defaultPrefs.fontScale, 0.01f)
+        assertEquals(false, defaultPrefs.highContrast)
+        assertEquals(false, defaultPrefs.reducedMotion)
+        assertEquals(true, defaultPrefs.spokenOutputEnabled)
+        assertEquals(com.example.model.AppLanguage.ENGLISH, defaultPrefs.preferredLanguage)
+    }
 }

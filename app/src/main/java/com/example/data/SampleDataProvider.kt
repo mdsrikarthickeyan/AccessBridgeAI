@@ -10,7 +10,10 @@ import com.example.model.CommunicationCard
 import com.example.model.NoticeCategory
 import com.example.model.NoticeItem
 import com.example.model.PlaceType
+import com.example.model.ReportStatusHistoryItem
+import com.example.model.VerificationRecord
 import com.example.model.VerificationStatus
+import com.example.model.VerifierRole
 
 object SampleDataProvider {
 
@@ -114,6 +117,195 @@ object SampleDataProvider {
             emergencyContact = "139 (Rail Madad Helpline)",
             isVerified = true,
             dateAdded = "01 Oct 2026"
+        ),
+        NoticeItem(
+            id = "notice-udid-05",
+            title = "UDID Disability Card Application & Renewal Form",
+            category = NoticeCategory.GOVERNMENT_FORM,
+            originalText = """
+                DEPARTMENT OF EMPOWERMENT OF PERSONS WITH DISABILITIES
+                MINISTRY OF SOCIAL JUSTICE AND EMPOWERMENT - FORM UDID-01
+                INSTRUCTIONS FOR UNIQUE DISABILITY IDENTITY CARD (UDID) APPLICATION
+                
+                Eligibility Criteria:
+                Any citizen of India with 40% or more benchmark disability certified under RPwD Act 2016.
+                
+                Steps to Complete Application:
+                Step 1: Fill out basic demographic details (Name, Date of Birth, Father's Name, Permanent Address).
+                Step 2: Upload recent passport photograph and signature or thumb impression.
+                Step 3: Attach valid Proof of Identity (Aadhaar Card, Voter ID, or Passport).
+                Step 4: Attach valid Proof of Address (Electricity bill, Ration card, or Domicile certificate).
+                Step 5: Upload previous Disability Certificate issued by District Medical Board.
+                Step 6: Submit application online or submit physical printout at District Disability Rehabilitation Centre (DDRC).
+                
+                Important Deadlines and Fees:
+                - Application fee: Nil (Free service).
+                - Card validity: 5 years for temporary disability; Lifetime for permanent disability.
+                - Verification and medical board assessment appointment scheduled within 30 days.
+                
+                Office Address & Helpline:
+                National UDID Portal Helpdesk, Room 204, Antyodaya Bhawan, CGO Complex, New Delhi 110003.
+                Toll Free: 1800-180-5126 | Email: udid-support@gov.in
+            """.trimIndent(),
+            plainSummary = "This official form explains how to apply for the free Unique Disability Identity Card (UDID). People with 40% or higher disability can apply online or at the district centre with their photo, Aadhaar card, and medical certificate.",
+            keyPoints = listOf(
+                "Application is 100% free with no government charges",
+                "Requires proof of identity, address, photo, and previous medical certificate",
+                "Medical assessment date will be allotted within 30 days of submission",
+                "Card is valid for 5 years (temporary) or lifetime (permanent)"
+            ),
+            actionRequired = "Gather your Aadhaar, passport photo, and doctor's certificate, then complete the 6 steps listed or visit your nearest DDRC centre.",
+            deadline = "Assessment within 30 days",
+            emergencyContact = "1800-180-5126 (UDID Helpdesk)",
+            isVerified = true,
+            dateAdded = "28 Sep 2026"
+        ),
+        NoticeItem(
+            id = "notice-pension-06",
+            title = "Divyang Pension Scheme Verification & Aadhaar Seeding Form",
+            category = NoticeCategory.GOVERNMENT_FORM,
+            originalText = """
+                DIRECTORATE OF SOCIAL WELFARE - PUBLIC ANNOUNCEMENT
+                CIRCULAR NO. DSW/PENSION/VERIF-2026/89
+                
+                Subject: Annual Physical / Digital Life Certificate Verification for Monthly Disability Pension.
+                
+                All beneficiaries receiving monthly Divyangjan financial assistance (Rs. 2,500/month) must complete annual verification before 30th November 2026.
+                
+                Procedure to Avoid Disruption of Pension:
+                1. Submit Jeevan Pramaan digital life certificate using biometric fingerprint / iris scanner at any Common Service Centre (CSC) or Post Office.
+                2. Alternatively, bedridden or high-support individuals may request doorstep postal gramin dak sevak verification by dialling 1950.
+                3. Ensure bank account is active and seeded with National Payments Corporation of India (NPCI) Aadhaar mapping.
+                
+                Required Documents:
+                - Original Pension Sanction PPO Book
+                - Active Bank Passbook showing IFSC code and Account Number
+                - UDID Card / Disability Certificate
+                - Aadhaar Card copy
+                
+                Ambiguous Instruction Notice:
+                Note: Paragraph 4 specifies that beneficiaries without Aadhaar linkage must submit manual Form Annexure-B at the Sub-Divisional Magistrate (SDM) office; however, opening hours for verification counters vary by district. Beneficiaries are advised to call district helpline to confirm timing before travelling.
+            """.trimIndent(),
+            plainSummary = "Beneficiaries of the monthly disability pension must submit their life certificate before 30 November 2026 to keep receiving payments. You can verify your fingerprint at a CSC centre, post office, or request home verification.",
+            keyPoints = listOf(
+                "Annual verification must be submitted before 30 November 2026",
+                "Monthly assistance amount: Rs. 2,500 per month",
+                "Home doorstep verification is available for bedridden individuals via postal service",
+                "Make sure your bank account is linked with Aadhaar"
+            ),
+            actionRequired = "Visit a CSC or post office with your pension book and Aadhaar before 30 November, or dial 1950 for home visit.",
+            deadline = "30 November 2026",
+            emergencyContact = "1950 (Social Welfare & Postal Helpline)",
+            isVerified = true,
+            dateAdded = "20 Sep 2026"
+        ),
+        NoticeItem(
+            id = "notice-scanned-ocr-07",
+            title = "Scanned Form: Railway Concession Certificate (Scanned / OCR)",
+            category = NoticeCategory.TRANSIT,
+            originalText = """
+                [SCANNED DOCUMENT - OCR PROCESSED: 200 DPI RESOLUTION]
+                GOVERNMENT OF INDIA - MINISTRY OF RAILWAYS
+                CONCESSION CERTIFICATE FOR PERSONS WITH ORTHOPAEDIC DISABILITY / PARAPLEGIA
+                FORM NO. 19-B / REVISED 2026
+
+                1. Name of Applicant: [Handwritten entry: Ramesh Kumar Verma]
+                2. Nature of Disability: Locomotor Benchmark Disability exceeding 50%
+                3. Certificate Issue Date: 12-JULY-2026 | Validity: Lifetime
+                4. Medical Authority Seal: Stamped by Medical Superintendent, District Civil Hospital
+                
+                Official Submission Instructions:
+                - Photocopy of this stamped concession certificate must be carried during journey along with Photo ID.
+                - To book ticket at concession window: Present original certificate and photo proof at PRS Booking Counter.
+                - Escort concession: One companion is entitled to same 75% fare concession in 2nd, Sleeper, and 3AC classes.
+                - OCR Quality Note: Stamped serial number in top right header has slight ink blur (No. 4082/2026); verify against original doctor slip.
+            """.trimIndent(),
+            plainSummary = "This scanned official railway form gives a 75% travel discount to Ramesh Kumar Verma and one accompanying person. Show the original certificate with the hospital stamp and a photo ID at the ticket counter and while traveling.",
+            keyPoints = listOf(
+                "75% discount on 2nd, Sleeper, and 3rd AC train tickets",
+                "One travel companion gets the exact same discount",
+                "Original certificate with hospital stamp must be shown during ticket purchase and journey",
+                "Doctor's stamp gives lifetime validity"
+            ),
+            actionRequired = "Take the original stamped certificate and your Aadhaar card to any railway booking counter.",
+            deadline = "Valid for lifetime journeys",
+            emergencyContact = "139 (Rail Madad Accessibility Desk)",
+            isVerified = true,
+            dateAdded = "15 Sep 2026"
+        ),
+        NoticeItem(
+            id = "notice-incomplete-doc-08",
+            title = "Incomplete Document: Assistive Device Subsidy (Missing Page 2)",
+            category = NoticeCategory.GOVERNMENT_FORM,
+            originalText = """
+                MINISTRY OF SOCIAL JUSTICE - ADIP SCHEME ASSISTANCE
+                CIRCULAR NO. MSJE/ADIP/2026/04 - PAGE 1 OF 2
+                
+                Subject: Free Distribution of Motorised Tricycles, Smart Canes, and Hearing Aids.
+                
+                Section 1: General Objective
+                Under the ADIP scheme, eligible persons with disabilities receive modern assistive aids without cost.
+                
+                Section 2: Initial Application Steps
+                Step 1: Obtain scheme application Form ADIP-A from District Disability Officer or ALIMCO camp.
+                Step 2: Attach copy of UDID card (minimum 40% disability).
+                Step 3: Attach two recent colour passport photos.
+                
+                [DOCUMENT INCOMPLETE NOTICE]:
+                Warning: Section 3 ('Income Ceilings and Financial Eligibility Thresholds') and Section 4 ('Camp Schedule and Venue List') continue on Page 2. Page 2 was omitted from this scanned upload.
+                Beneficiaries are strongly advised to seek human review or contact ALIMCO helpline before travelling, as income criteria (annual income limit for 100% subsidy) cannot be verified from Page 1 alone.
+            """.trimIndent(),
+            plainSummary = "This notice is Page 1 of 2 for free wheelchairs, tricycles, and hearing aids. You need a UDID card and photos. Because Page 2 is missing, the exact income limit and camp dates are not shown and need human review.",
+            keyPoints = listOf(
+                "Free motorised tricycles, smart canes, and hearing aids under ADIP scheme",
+                "Requires UDID card with at least 40% disability",
+                "Needs Form ADIP-A and two passport photographs",
+                "Notice is missing Page 2: income limits and venue dates must be checked with office"
+            ),
+            actionRequired = "Collect your UDID card and photos, but call the ALIMCO helpline to confirm income limits from missing Page 2.",
+            deadline = "Check Page 2 or call ALIMCO helpline",
+            emergencyContact = "1800-180-5129 (ALIMCO National Toll-Free)",
+            isVerified = false,
+            dateAdded = "12 Sep 2026"
+        ),
+        NoticeItem(
+            id = "notice-multipage-pdf-09",
+            title = "Multi-Page PDF: National Accessibility Guidelines (3 Pages)",
+            category = NoticeCategory.TRANSIT,
+            originalText = """
+                MINISTRY OF HOUSING AND URBAN AFFAIRS
+                HARMONISED ACCESSIBILITY STANDARDS 2026 - GAZETTE EXTRAORDINARY
+                
+                --- PAGE 1: ENTRANCES, RAMPS AND CIRCULATION PATHS ---
+                1.1 Step-Free Approach: All public transit hubs and municipal buildings must provide a ramp with gradient not steeper than 1:12.
+                1.2 Clear Entrance Width: Automated sliding doors or swinging doors must maintain minimum clear width of 900 mm.
+                1.3 Continuous Tactile Guiding: Warning studs (blister paving) must be placed 300 mm ahead of any level change or ramp start.
+                
+                --- PAGE 2: VERTICAL MOBILITY AND LIFTS ---
+                2.1 Passenger Lifts: Car dimensions must be at least 1500 mm x 1500 mm to accommodate power wheelchairs.
+                2.2 Control Buttons: Height of buttons must be between 900 mm and 1200 mm from floor level, with raised Braille numerals.
+                2.3 Acoustic Feedback: Voice announcements must state floor number and door opening/closing direction in local language and English.
+                
+                --- PAGE 3: ACCESSIBLE RESTROOMS AND EMERGENCY EVACUATION ---
+                3.1 Restroom Layout: Minimum internal clearance of 2200 mm x 2000 mm with outward swinging door.
+                3.2 Grab Bars: L-shaped wall grab bars mounted 750 mm above floor level alongside water closet.
+                3.3 Emergency Alarm: Red emergency pull cord installed 100 mm above floor level with audible strobe beacon outside door.
+                3.4 Evacuation Chairs: Stair evacuation chairs must be stored on every floor landing for power outage emergencies.
+            """.trimIndent(),
+            plainSummary = "This 3-page official standard sets mandatory accessibility rules for all public buildings. Page 1 covers gentle 1:12 ramps and 900mm wide doors. Page 2 covers wheelchair-sized elevators with Braille buttons and voice announcements. Page 3 mandates accessible toilets and emergency pull cords.",
+            keyPoints = listOf(
+                "Page 1: 1:12 maximum ramp gradient and 900mm wide doors",
+                "Page 1: Tactile blister studs 300mm before all steps and slopes",
+                "Page 2: Elevators must fit power wheelchairs (1500mm x 1500mm) with Braille buttons",
+                "Page 2: Voice announcements for floors in local language and English",
+                "Page 3: Accessible toilets must have 750mm grab bars and floor-level red alarm cord",
+                "Page 3: Evacuation chairs required on all floors for fire emergencies"
+            ),
+            actionRequired = "Architects and facility managers must follow all three pages of standards during audits and renovations.",
+            deadline = "Mandatory compliance across all public buildings",
+            emergencyContact = "011-23062300 (Urban Accessibility Cell)",
+            isVerified = true,
+            dateAdded = "10 Sep 2026"
         )
     )
 
@@ -326,7 +518,10 @@ object SampleDataProvider {
             assistanceDeskPhone = "011-23951112",
             description = "Historic municipal library with dedicated Braille books and quiet study corners.",
             accessibilityNotes = "Ground floor has Braille materials. Elevator to upper floors is currently undergoing maintenance. Visitors recommend calling ahead.",
-            nearestTransit = "Chandni Chowk Metro Station (Yellow Line) - 300m"
+            nearestTransit = "Chandni Chowk Metro Station (Yellow Line) - 300m",
+            hasConflict = true,
+            conflictDescription = "Community report indicates elevator maintenance still ongoing; under verification.",
+            communityReportsCount = 1
         ),
         AccessiblePlace(
             id = "place-bengaluru-collectorate-08",
@@ -357,6 +552,39 @@ object SampleDataProvider {
             description = "District administrative headquarters providing citizen certificates and electoral services.",
             accessibilityNotes = "Ground floor ramps verified by public photos; upper floors and restroom facilities not yet formally audited.",
             nearestTransit = "Sir M. Visveshwaraya Metro Station - 450m"
+        ),
+        AccessiblePlace(
+            id = "place-rajiv-chowk-09",
+            name = "Rajiv Chowk Metro Interchange",
+            type = PlaceType.METRO,
+            city = "Delhi",
+            address = "Block B, Connaught Place, New Delhi, Delhi 110001",
+            latitude = 28.6328,
+            longitude = 77.2197,
+            verificationStatus = VerificationStatus.VERIFIED,
+            lastVerifiedDate = "18 Sep 2026",
+            informationSource = "DMRC Accessibility Audit & Joint Inspection",
+            openingHours = "05:30 AM - 11:30 PM",
+            entranceDetails = "Elevator access from street level at Gate 7; ramp at Gate 6 undergoing civil repair",
+            stepFreeEntrance = true,
+            wheelchairRamp = true,
+            liftAvailable = true,
+            accessibleToilet = true,
+            wheelchairAccessibleRoute = true,
+            tactilePaving = true,
+            brailleSignage = true,
+            audioAssistance = true,
+            visualAnnouncements = true,
+            accessibleParking = false,
+            signLanguageAssistance = false,
+            otherFacilities = listOf("Free battery-operated buggies for senior citizens and disabled passengers", "Wide automatic fare gates at Gate 7"),
+            assistanceDeskPhone = "011-23417910",
+            description = "Central underground interchange hub connecting Blue and Yellow metro lines. Full step-free elevator access at designated street gates.",
+            accessibilityNotes = "Continuous tactile guiding path throughout concourse level. Dedicated wide gates for wheelchair users.",
+            nearestTransit = "Direct DMRC Yellow and Blue line platform interchange",
+            hasConflict = true,
+            conflictDescription = "Community report: Gate 6 sidewalk ramp has loose tiles and cracked slab. Maintenance crew dispatched for resurfacing.",
+            communityReportsCount = 1
         )
     )
 
@@ -562,12 +790,15 @@ object SampleDataProvider {
             category = BarrierCategory.BROKEN_RAMP,
             locationName = "Rajiv Chowk Metro Station",
             city = "Delhi",
+            facilityId = "place-rajiv-chowk-03",
             specificLocationDetails = "Gate 6 sidewalk ramp has broken concrete edge and loose tiles blocking wheels",
             severity = BarrierSeverity.HIGH,
-            status = BarrierStatus.IN_PROGRESS,
+            status = BarrierStatus.BEING_CHECKED,
             dateReported = "09 Oct 2026",
+            timestamp = 1760000000000L,
             statusNotes = "DMRC Maintenance Unit inspected site on 10 Oct. Repair crew scheduled for resurfacing by 14 Oct.",
-            resolutionEstimate = "Expected resolution: 14 Oct 2026"
+            resolutionEstimate = "Expected resolution: 14 Oct 2026",
+            hasConflictWithOfficialAudit = true
         ),
         BarrierReport(
             id = "rep-002",
@@ -575,10 +806,12 @@ object SampleDataProvider {
             category = BarrierCategory.BLOCKED_TACTILE,
             locationName = "Majestic KSRTC Bus Terminal",
             city = "Bengaluru",
+            facilityId = "place-majestic-01",
             specificLocationDetails = "Platform 3 main yellow walkway completely blocked by commercial kiosks",
             severity = BarrierSeverity.MEDIUM,
-            status = BarrierStatus.UNDER_REVIEW,
+            status = BarrierStatus.WAITING_FOR_REVIEW,
             dateReported = "07 Oct 2026",
+            timestamp = 1759800000000L,
             statusNotes = "Notice forwarded to KSRTC Terminal Manager. Joint clearance inspection pending.",
             resolutionEstimate = "Under review with terminal authorities"
         ),
@@ -588,12 +821,202 @@ object SampleDataProvider {
             category = BarrierCategory.ELEVATOR_OUT,
             locationName = "Anna Centenary Library Entrance",
             city = "Chennai",
+            facilityId = "place-anna-library-04",
             specificLocationDetails = "Ground floor lift audio floor announcement was silent",
             severity = BarrierSeverity.LOW,
             status = BarrierStatus.RESOLVED,
             dateReported = "02 Oct 2026",
+            timestamp = 1759400000000L,
             statusNotes = "Speaker module replaced and bilingual Tamil/English floor chime tested and verified.",
             resolutionEstimate = "Resolved on 04 Oct 2026"
+        ),
+        BarrierReport(
+            id = "rep-004",
+            title = "Steep Curb Without Ramp at Hospital Casualty Gate",
+            category = BarrierCategory.INACCESSIBLE_ENTRANCE,
+            locationName = "AIIMS New Delhi OPD & Emergency",
+            city = "Delhi",
+            facilityId = "place-aiims-02",
+            specificLocationDetails = "Emergency ambulance bay pedestrian crossover has 6-inch sharp curb drop",
+            severity = BarrierSeverity.URGENT,
+            status = BarrierStatus.RECEIVED,
+            dateReported = "11 Oct 2026",
+            timestamp = 1760200000000L,
+            statusNotes = "Intake received through visitor mobile report. Queued for regional coordinator triage.",
+            resolutionEstimate = "Triage in progress"
+        ),
+        BarrierReport(
+            id = "rep-005",
+            title = "Reported Broken Braille Signage on Floor 2",
+            category = BarrierCategory.MISSING_SIGN_ASSIST,
+            locationName = "Delhi Public Library Central Branch",
+            city = "Delhi",
+            facilityId = "place-delhi-publib-07",
+            specificLocationDetails = "Signage reported missing on upper floor stacks",
+            severity = BarrierSeverity.LOW,
+            status = BarrierStatus.UNABLE_TO_VERIFY,
+            dateReported = "28 Sep 2026",
+            timestamp = 1759000000000L,
+            statusNotes = "On-site audit confirmed Braille plates exist in Braille Reading Section, but 2nd floor remains closed for civil renovation. Condition could not be verified as reported.",
+            resolutionEstimate = "Closed: Insufficient access for physical verification"
+        )
+    )
+
+    val sampleStatusHistory = listOf(
+        // rep-001 audit trail
+        ReportStatusHistoryItem(
+            id = "hist-001-1",
+            reportId = "rep-001",
+            fromStatus = null,
+            toStatus = BarrierStatus.RECEIVED,
+            changedBy = "System Intake",
+            changedRole = "Automated Gateway",
+            timestamp = "09 Oct 2026, 10:15 AM",
+            reviewNote = "Report logged with location coordinates at Rajiv Chowk Gate 6.",
+            actionTaken = "Intake Confirmation"
+        ),
+        ReportStatusHistoryItem(
+            id = "hist-001-2",
+            reportId = "rep-001",
+            fromStatus = BarrierStatus.RECEIVED,
+            toStatus = BarrierStatus.WAITING_FOR_REVIEW,
+            changedBy = "Kavita Rao",
+            changedRole = "Certified Access Auditor",
+            timestamp = "09 Oct 2026, 02:40 PM",
+            reviewNote = "Triage completed. Severity marked High due to broken concrete on primary step-free access route.",
+            actionTaken = "Assigned to DMRC Civil Maintenance"
+        ),
+        ReportStatusHistoryItem(
+            id = "hist-001-3",
+            reportId = "rep-001",
+            fromStatus = BarrierStatus.WAITING_FOR_REVIEW,
+            toStatus = BarrierStatus.BEING_CHECKED,
+            changedBy = "Vikram Sen",
+            changedRole = "Public Works Engineer",
+            timestamp = "10 Oct 2026, 11:30 AM",
+            reviewNote = "Site inspection conducted. Concrete cracked across 1.2m ramp slab. Paving crew dispatched for repair.",
+            actionTaken = "Physical Inspection Conducted"
+        ),
+
+        // rep-002 audit trail
+        ReportStatusHistoryItem(
+            id = "hist-002-1",
+            reportId = "rep-002",
+            fromStatus = null,
+            toStatus = BarrierStatus.RECEIVED,
+            changedBy = "System Intake",
+            changedRole = "Automated Gateway",
+            timestamp = "07 Oct 2026, 08:00 AM",
+            reviewNote = "Visitor uploaded barrier report at Majestic KSRTC Platform 3.",
+            actionTaken = "Intake Confirmation"
+        ),
+        ReportStatusHistoryItem(
+            id = "hist-002-2",
+            reportId = "rep-002",
+            fromStatus = BarrierStatus.RECEIVED,
+            toStatus = BarrierStatus.WAITING_FOR_REVIEW,
+            changedBy = "Arun K.",
+            changedRole = "Certified Access Auditor",
+            timestamp = "07 Oct 2026, 12:15 PM",
+            reviewNote = "Notice dispatched to KSRTC Terminal Superintendent for commercial vendor clearance.",
+            actionTaken = "Official Notice Sent"
+        ),
+
+        // rep-003 audit trail
+        ReportStatusHistoryItem(
+            id = "hist-003-1",
+            reportId = "rep-003",
+            fromStatus = null,
+            toStatus = BarrierStatus.RECEIVED,
+            changedBy = "System Intake",
+            changedRole = "Automated Gateway",
+            timestamp = "02 Oct 2026, 09:20 AM",
+            reviewNote = "Report logged for silent elevator announcements in Ground Floor Lift A.",
+            actionTaken = "Intake Confirmation"
+        ),
+        ReportStatusHistoryItem(
+            id = "hist-003-2",
+            reportId = "rep-003",
+            fromStatus = BarrierStatus.RECEIVED,
+            toStatus = BarrierStatus.BEING_CHECKED,
+            changedBy = "Senthil Nathan",
+            changedRole = "Campus Accessibility Coordinator",
+            timestamp = "03 Oct 2026, 11:00 AM",
+            reviewNote = "Library technicians inspected control box and ordered replacement speaker module.",
+            actionTaken = "Parts Replacement Ordered"
+        ),
+        ReportStatusHistoryItem(
+            id = "hist-003-3",
+            reportId = "rep-003",
+            fromStatus = BarrierStatus.BEING_CHECKED,
+            toStatus = BarrierStatus.RESOLVED,
+            changedBy = "Senthil Nathan",
+            changedRole = "Campus Accessibility Coordinator",
+            timestamp = "04 Oct 2026, 04:30 PM",
+            reviewNote = "Sound module replaced. Bilingual voice announcements verified working at 75 dB.",
+            actionTaken = "Resolved & Verified"
+        )
+    )
+
+    val sampleVerificationRecords = listOf(
+        VerificationRecord(
+            id = "ver-majestic-01",
+            facilityId = "place-majestic-01",
+            verifierName = "Dr. Manjunath Swamy",
+            verifierRole = VerifierRole.CERTIFIED_AUDITOR,
+            verificationDate = "15 Sep 2026",
+            auditMethod = "On-site physical inspection with digital incline gauge & tactile route audit",
+            evidenceNotes = "All 4 main concourse ramps compliant with 1:12 gradient. Tactile paving unbroken from Metro concourse to Platform 1. Restroom doors have 900mm clear width.",
+            verifiedFeatures = listOf(
+                "Step-free entrance",
+                "Wheelchair ramp",
+                "Lifts with Braille buttons",
+                "Accessible toilet",
+                "Tactile guiding pathway",
+                "Audio announcements",
+                "Visual display announcements"
+            ),
+            statusAssigned = VerificationStatus.VERIFIED,
+            isOfficialAudit = true
+        ),
+        VerificationRecord(
+            id = "ver-aiims-02",
+            facilityId = "place-aiims-02",
+            verifierName = "Rajesh Sharma",
+            verifierRole = VerifierRole.FACILITY_ENGINEER,
+            verificationDate = "10 Sep 2026",
+            auditMethod = "Hospital infrastructure audit following Accessible India Campaign Guidelines",
+            evidenceNotes = "Automated sliding doors, 2.1m wide elevator cabs, continuous tactile guidance paths in Main OPD block. Emergency department drop-off has dedicated wheelchair parking bays.",
+            verifiedFeatures = listOf(
+                "Step-free entrance",
+                "Wheelchair ramp",
+                "High capacity hospital lift",
+                "Accessible toilet on each floor",
+                "Tactile paving",
+                "Braille signage",
+                "Accessible parking",
+                "Sign language support desk"
+            ),
+            statusAssigned = VerificationStatus.VERIFIED,
+            isOfficialAudit = true
+        ),
+        VerificationRecord(
+            id = "ver-anna-04",
+            facilityId = "place-anna-library-04",
+            verifierName = "Meenakshi Sundaram",
+            verifierRole = VerifierRole.CAMPUS_COORDINATOR,
+            verificationDate = "28 Aug 2026",
+            auditMethod = "Public library audit with assistive technology cell assessment",
+            evidenceNotes = "Main entrance ramp has dual-level handrails. Tactile floor guides lead directly to the Braille Library. Computer terminals equipped with NVDA & JAWS.",
+            verifiedFeatures = listOf(
+                "Step-free ramp",
+                "Accessible lift",
+                "Braille library section",
+                "Tactile pathways",
+                "Accessible toilet"
+            ),
+            statusAssigned = VerificationStatus.VERIFIED,
+            isOfficialAudit = true
         )
     )
 }

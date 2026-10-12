@@ -18,13 +18,20 @@ data class BarrierReportEntity(
     val severityName: String,
     val statusName: String,
     val dateReported: String,
+    val timestamp: Long,
     val statusNotes: String,
-    val resolutionEstimate: String?
+    val resolutionEstimate: String?,
+    val facilityId: String?,
+    val optionalImageUrl: String?,
+    val contactEmailOrPhone: String?,
+    val isUserSubmitted: Boolean,
+    val reporterUserId: String?,
+    val hasConflictWithOfficialAudit: Boolean
 ) {
     fun toModel(): BarrierReport {
         val category = BarrierCategory.entries.find { it.name == categoryName } ?: BarrierCategory.BROKEN_RAMP
         val severity = BarrierSeverity.entries.find { it.name == severityName } ?: BarrierSeverity.MEDIUM
-        val status = BarrierStatus.entries.find { it.name == statusName } ?: BarrierStatus.SUBMITTED
+        val status = BarrierStatus.entries.find { it.name == statusName } ?: BarrierStatus.RECEIVED
         return BarrierReport(
             id = id,
             title = title,
@@ -35,8 +42,15 @@ data class BarrierReportEntity(
             severity = severity,
             status = status,
             dateReported = dateReported,
+            timestamp = timestamp,
             statusNotes = statusNotes,
-            resolutionEstimate = resolutionEstimate
+            resolutionEstimate = resolutionEstimate,
+            facilityId = facilityId,
+            optionalImageUrl = optionalImageUrl,
+            contactEmailOrPhone = contactEmailOrPhone,
+            isUserSubmitted = isUserSubmitted,
+            reporterUserId = reporterUserId,
+            hasConflictWithOfficialAudit = hasConflictWithOfficialAudit
         )
     }
 
@@ -52,8 +66,15 @@ data class BarrierReportEntity(
                 severityName = model.severity.name,
                 statusName = model.status.name,
                 dateReported = model.dateReported,
+                timestamp = model.timestamp,
                 statusNotes = model.statusNotes,
-                resolutionEstimate = model.resolutionEstimate
+                resolutionEstimate = model.resolutionEstimate,
+                facilityId = model.facilityId,
+                optionalImageUrl = model.optionalImageUrl,
+                contactEmailOrPhone = model.contactEmailOrPhone,
+                isUserSubmitted = model.isUserSubmitted,
+                reporterUserId = model.reporterUserId,
+                hasConflictWithOfficialAudit = model.hasConflictWithOfficialAudit
             )
         }
     }

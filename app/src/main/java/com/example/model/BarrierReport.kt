@@ -17,11 +17,12 @@ enum class BarrierSeverity(val label: String, val levelOrder: Int) {
     URGENT("Immediate Safety Risk", 4)
 }
 
-enum class BarrierStatus(val label: String, val description: String) {
-    SUBMITTED("Submitted", "Report received and queued for verification"),
-    UNDER_REVIEW("Under Review", "Facility administration contacted"),
-    IN_PROGRESS("In Progress", "Repair or accommodation scheduled"),
-    RESOLVED("Resolved", "Barrier removed and facility verified accessible")
+enum class BarrierStatus(val label: String, val description: String, val stepIndex: Int) {
+    RECEIVED("Received", "Report logged in system; awaiting initial intake", 0),
+    WAITING_FOR_REVIEW("Waiting for review", "Queued for accessibility coordinator evaluation", 1),
+    BEING_CHECKED("Being checked", "Physical site inspection or facility contact initiated", 2),
+    RESOLVED("Resolved", "Barrier removed or accessible accommodation completed", 3),
+    UNABLE_TO_VERIFY("Unable to verify", "Insufficient details or condition could not be confirmed", 4)
 }
 
 data class BarrierReport(
@@ -32,8 +33,15 @@ data class BarrierReport(
     val city: String,
     val specificLocationDetails: String,
     val severity: BarrierSeverity,
-    val status: BarrierStatus,
+    val status: BarrierStatus = BarrierStatus.RECEIVED,
     val dateReported: String,
-    val statusNotes: String,
-    val resolutionEstimate: String? = null
+    val timestamp: Long = System.currentTimeMillis(),
+    val statusNotes: String = "Report submitted by visitor; initial review pending.",
+    val resolutionEstimate: String? = null,
+    val facilityId: String? = null, // Facility reference where known
+    val optionalImageUrl: String? = null,
+    val contactEmailOrPhone: String? = null, // Optional for user privacy
+    val isUserSubmitted: Boolean = false, // Allows withdrawing one's own report
+    val reporterUserId: String? = null,
+    val hasConflictWithOfficialAudit: Boolean = false
 )

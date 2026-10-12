@@ -67,7 +67,10 @@ data class AccessiblePlace(
     val description: String,
     val accessibilityNotes: String,
     val nearestTransit: String,
-    val mapLink: String? = null
+    val mapLink: String? = null,
+    val hasConflict: Boolean = false,
+    val conflictDescription: String? = null,
+    val communityReportsCount: Int = 0
 ) {
     // Alias property for compatibility
     val audioAnnouncements: Boolean

@@ -1,5 +1,12 @@
 package com.example.model
 
+data class DocumentChecklistItem(
+    val id: String,
+    val text: String,
+    val isCompleted: Boolean = false,
+    val isUserCreated: Boolean = false
+)
+
 data class DocumentQA(
     val id: String,
     val question: String,
@@ -15,11 +22,15 @@ data class ExplainedDocument(
     val simpleExplanation: String,
     val translatedExplanation: String? = null,
     val activeLanguage: AppLanguage = AppLanguage.ENGLISH,
-    val datesAndTimes: List<String> = emptyList(),
-    val directionsAndRooms: List<String> = emptyList(),
+    val numberedSteps: List<String> = emptyList(),
     val requiredDocuments: List<String> = emptyList(),
+    val importantDates: List<String> = emptyList(),
+    val eligibilityConditions: List<String> = emptyList(),
+    val directionsAndRooms: List<String> = emptyList(),
     val warnings: List<String> = emptyList(),
     val contactInfo: String? = null,
+    val ambiguousOrReviewItems: List<String> = emptyList(),
+    val personalChecklist: List<DocumentChecklistItem> = emptyList(),
     val imageUri: String? = null,
     val imageFileName: String? = null,
     val isAiAnalyzed: Boolean = true,

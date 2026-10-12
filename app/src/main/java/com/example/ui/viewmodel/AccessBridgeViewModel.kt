@@ -8,6 +8,8 @@ import com.example.data.PreferencesRepository
 import com.example.data.SampleDataProvider
 import com.example.data.local.AppDatabase
 import com.example.data.local.BarrierReportEntity
+import com.example.data.local.FacilityEntity
+import com.example.data.local.ReportStatusHistoryEntity
 import com.example.data.local.SavedNoticeEntity
 import com.example.model.AccessibilityPreferences
 import com.example.model.AccessiblePlace
@@ -18,13 +20,18 @@ import com.example.model.BarrierSeverity
 import com.example.model.BarrierStatus
 import com.example.model.CommCategory
 import com.example.model.CommunicationCard
+import com.example.model.DocumentChecklistItem
 import com.example.model.DocumentQA
 import com.example.model.ExplainedDocument
 import com.example.model.NoticeCategory
 import com.example.model.NoticeItem
 import com.example.model.PlaceType
+import com.example.model.ReportStatusHistoryItem
+import com.example.model.TtsVoiceTone
+import com.example.model.UserRole
 import com.example.service.CommunicationTranslationService
 import com.example.service.DocumentOcrService
+import com.example.service.FormSimplifierService
 import com.example.service.GeminiVisionService
 import com.example.service.NoticeExplainerService
 import com.example.service.SpeechRecognitionState
@@ -63,11 +70,21 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
 
     private val db = AppDatabase.getDatabase(application)
     private val barrierReportDao = db.barrierReportDao()
+    private val reportStatusHistoryDao = db.reportStatusHistoryDao()
+    private val facilityDao = db.facilityDao()
     private val savedNoticeDao = db.savedNoticeDao()
     private val preferencesRepository = PreferencesRepository(application)
     val ttsManager = TtsManager(application)
     val speechToTextManager = SpeechToTextManager(application)
     val translationService = CommunicationTranslationService()
+
+    // User Roles & Administrative Permissions
+    private val _currentUserRole = MutableStateFlow<UserRole>(UserRole.PUBLIC_USER)
+    val currentUserRole: StateFlow<UserRole> = _currentUserRole.asStateFlow()
+
+    // Audit Trail History
+    private val _statusHistory = MutableStateFlow<List<ReportStatusHistoryItem>>(SampleDataProvider.sampleStatusHistory)
+    val statusHistory: StateFlow<List<ReportStatusHistoryItem>> = _statusHistory.asStateFlow()
 
     // Current Screen
     private val _currentScreen = MutableStateFlow(AppScreen.HOME)
@@ -197,6 +214,15 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
             }
         }
 
+        // Observe status change audit history from local database
+        viewModelScope.launch {
+            reportStatusHistoryDao.getAllHistory().collect { entityList ->
+                val localHistory = entityList.map { it.toModel() }
+                val combined = (localHistory + SampleDataProvider.sampleStatusHistory).distinctBy { it.id }
+                _statusHistory.value = combined
+            }
+        }
+
         // Observe saved notices
         viewModelScope.launch {
             savedNoticeDao.getAllSavedNotices().collect { entityList ->
@@ -212,19 +238,12 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
     }
 
     private fun noticeToExplainedDoc(notice: NoticeItem): ExplainedDocument {
-        return ExplainedDocument(
-            id = notice.id,
-            title = notice.title,
+        return FormSimplifierService.simplifyDocument(
+            rawText = notice.originalText,
             category = notice.category,
-            originalExtractedText = notice.originalText,
-            simpleExplanation = notice.plainSummary,
-            datesAndTimes = listOfNotNull(notice.deadline?.let { "Date / Deadline: $it" }),
-            directionsAndRooms = listOf("Platform / Main Gate assistance counter"),
-            requiredDocuments = listOf("Disability Identity Card / UDID or Photo ID"),
-            warnings = listOf("Arrive at least 30 minutes in advance for guided assistance"),
-            contactInfo = notice.emergencyContact,
-            isAiAnalyzed = true,
-            aiProviderNote = "Verified Accessibility Circular",
+            customTitle = notice.title
+        ).copy(
+            id = notice.id,
             isSaved = notice.isSaved,
             dateAdded = notice.dateAdded
         )
@@ -387,9 +406,9 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
                     categoryName = doc.category.name,
                     originalText = doc.originalExtractedText,
                     plainSummary = doc.simpleExplanation,
-                    keyPointsJson = doc.datesAndTimes.joinToString("|||"),
-                    actionRequired = doc.directionsAndRooms.firstOrNull() ?: "Visit support counter",
-                    deadline = doc.datesAndTimes.firstOrNull(),
+                    keyPointsJson = doc.importantDates.joinToString("|||"),
+                    actionRequired = doc.numberedSteps.firstOrNull() ?: "Visit support counter",
+                    deadline = doc.importantDates.firstOrNull(),
                     emergencyContact = doc.contactInfo,
                     isVerified = true,
                     dateAdded = doc.dateAdded
@@ -404,9 +423,9 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
                     categoryName = doc.category.name,
                     originalText = doc.originalExtractedText,
                     plainSummary = doc.simpleExplanation,
-                    keyPointsJson = doc.datesAndTimes.joinToString("|||"),
-                    actionRequired = doc.directionsAndRooms.firstOrNull() ?: "Visit support counter",
-                    deadline = doc.datesAndTimes.firstOrNull(),
+                    keyPointsJson = doc.importantDates.joinToString("|||"),
+                    actionRequired = doc.numberedSteps.firstOrNull() ?: "Visit support counter",
+                    deadline = doc.importantDates.firstOrNull(),
                     emergencyContact = doc.contactInfo,
                     isVerified = true,
                     dateAdded = doc.dateAdded
@@ -416,6 +435,37 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
                 _feedbackMessage.value = "Notice saved for offline reading."
             }
         }
+    }
+
+    // --- Personal Checklist Actions ---
+    fun toggleChecklistItem(itemId: String) {
+        val doc = _currentExplainedDoc.value ?: return
+        val updatedList = doc.personalChecklist.map { item ->
+            if (item.id == itemId) item.copy(isCompleted = !item.isCompleted)
+            else item
+        }
+        _currentExplainedDoc.value = doc.copy(personalChecklist = updatedList)
+    }
+
+    fun addPersonalChecklistItem(text: String) {
+        val doc = _currentExplainedDoc.value ?: return
+        val newItem = DocumentChecklistItem(
+            id = "custom-chk-${UUID.randomUUID().toString().take(6)}",
+            text = text.trim(),
+            isCompleted = false,
+            isUserCreated = true
+        )
+        _currentExplainedDoc.value = doc.copy(
+            personalChecklist = doc.personalChecklist + newItem
+        )
+        _feedbackMessage.value = "Item added to checklist."
+    }
+
+    fun removePersonalChecklistItem(itemId: String) {
+        val doc = _currentExplainedDoc.value ?: return
+        _currentExplainedDoc.value = doc.copy(
+            personalChecklist = doc.personalChecklist.filter { it.id != itemId }
+        )
     }
 
     // --- Places Actions ---
@@ -562,9 +612,15 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
         _translationError.value = null
     }
 
-    fun speakText(text: String, language: AppLanguage? = null) {
+    fun speakText(text: String, language: AppLanguage? = null, force: Boolean = true) {
+        if (!preferences.value.spokenOutputEnabled && !force) return
         val lang = language ?: preferences.value.preferredLanguage
-        ttsManager.speak(text, lang, preferences.value.speechRate)
+        ttsManager.speak(
+            text = text,
+            language = lang,
+            rate = preferences.value.speechRate,
+            pitch = preferences.value.voiceTone.pitch
+        )
     }
 
     fun stopSpeaking() {
@@ -574,13 +630,20 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
     fun testSpeech() {
         val lang = preferences.value.preferredLanguage
         val phrase = when (lang) {
-            AppLanguage.HINDI -> "नमस्ते, एक्सेसब्रिज ध्वनि परीक्षण सफल है।"
-            AppLanguage.TAMIL -> "வணக்கம், குரல் சோதனை வெற்றிகரமாக முடிந்தது."
-            AppLanguage.TELUGU -> "నమస్కారం, వాయిస్ పరీక్ష పూర్తయింది."
-            AppLanguage.KANNADA -> "ನಮಸ್ಕಾರ, ಧ್ವನಿ ಪರೀಕ್ಷೆ ಯಶಸ್ವಿಯಾಗಿದೆ."
-            else -> "Hello, voice reading test completed successfully."
+            AppLanguage.HINDI -> "नमस्ते, एक्सेसब्रिज ध्वनि और गति परीक्षण सफल है।"
+            AppLanguage.TAMIL -> "வணக்கம், குரல் மற்றும் வேகம் சோதனை வெற்றிகரமாக முடிந்தது."
+            AppLanguage.TELUGU -> "నమస్కారం, వాయిస్ మరియు వేగం పరీక్ష పూర్తయింది."
+            AppLanguage.KANNADA -> "ನಮಸ್ಕಾರ, ಧ್ವನಿ ಮತ್ತು ವೇಗ ಪರೀಕ್ಷೆ ಯಶಸ್ವಿಯಾಗಿದೆ."
+            AppLanguage.BENGALI -> "নমস্কার, ভয়েস এবং গতি পরীক্ষা সফল হয়েছে।"
+            AppLanguage.MARATHI -> "नमस्कार, आवाज आणि गती चाचणी यशस्वी झाली."
+            else -> "Hello, your voice pitch and speech rate settings are working properly."
         }
-        ttsManager.speak(phrase, lang, preferences.value.speechRate)
+        ttsManager.speak(
+            text = phrase,
+            language = lang,
+            rate = preferences.value.speechRate,
+            pitch = preferences.value.voiceTone.pitch
+        )
     }
 
     // --- Barrier Reports Actions ---
@@ -597,43 +660,189 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
         _selectedReportStatusFilter.value = status
     }
 
+    fun setUserRole(role: UserRole) {
+        _currentUserRole.value = role
+        _feedbackMessage.value = "Switched to role: ${role.label}"
+    }
+
+    fun clearFeedbackMessage() {
+        _feedbackMessage.value = null
+    }
+
     fun submitNewBarrierReport(
         title: String,
         category: BarrierCategory,
         locationName: String,
         city: String,
         details: String,
-        severity: BarrierSeverity
+        severity: BarrierSeverity,
+        optionalContact: String? = null,
+        optionalImage: String? = null
     ) {
+        // Strict Input Validation
+        val trimmedTitle = title.trim()
+        val trimmedLoc = locationName.trim()
+        val trimmedCity = city.trim()
+        val trimmedDetails = details.trim()
+
+        if (trimmedTitle.length < 3 || trimmedTitle.length > 100) {
+            _feedbackMessage.value = "Title must be between 3 and 100 characters."
+            return
+        }
+        if (trimmedLoc.length < 3 || trimmedLoc.length > 100) {
+            _feedbackMessage.value = "Location name must be between 3 and 100 characters."
+            return
+        }
+        if (trimmedCity.length < 2 || trimmedCity.length > 50) {
+            _feedbackMessage.value = "City must be between 2 and 50 characters."
+            return
+        }
+        if (trimmedDetails.length < 8 || trimmedDetails.length > 500) {
+            _feedbackMessage.value = "Please provide specific details between 8 and 500 characters."
+            return
+        }
+
+        // Duplicate submission prevention
+        val isDuplicate = _barrierReports.value.any {
+            it.title.equals(trimmedTitle, ignoreCase = true) &&
+            it.locationName.equals(trimmedLoc, ignoreCase = true) &&
+            (it.status == BarrierStatus.RECEIVED || it.status == BarrierStatus.WAITING_FOR_REVIEW)
+        }
+        if (isDuplicate) {
+            _feedbackMessage.value = "A report for \"$trimmedTitle\" at this location has already been submitted and is in queue."
+            return
+        }
+
         viewModelScope.launch {
             val dateStr = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date())
             val newReport = BarrierReport(
                 id = "rep-${UUID.randomUUID().toString().take(6)}",
-                title = title.trim(),
+                title = trimmedTitle,
                 category = category,
-                locationName = locationName.trim(),
-                city = city.trim(),
-                specificLocationDetails = details.trim(),
+                locationName = trimmedLoc,
+                city = trimmedCity,
+                specificLocationDetails = trimmedDetails,
                 severity = severity,
-                status = BarrierStatus.SUBMITTED,
+                status = BarrierStatus.RECEIVED,
                 dateReported = dateStr,
-                statusNotes = "Report received and queued for physical review by regional accessibility team.",
-                resolutionEstimate = "Initial review within 48 hours"
+                timestamp = System.currentTimeMillis(),
+                statusNotes = "Report received and queued for intake by regional accessibility coordinator.",
+                resolutionEstimate = "Initial review scheduled within 48 hours",
+                contactEmailOrPhone = optionalContact?.trim()?.takeIf { it.isNotBlank() },
+                optionalImageUrl = optionalImage,
+                isUserSubmitted = true
+            )
+
+            // Also create initial status history audit entry
+            val initialHistory = ReportStatusHistoryItem(
+                id = "hist-${UUID.randomUUID().toString().take(8)}",
+                reportId = newReport.id,
+                fromStatus = null,
+                toStatus = BarrierStatus.RECEIVED,
+                changedBy = "User Submission (${currentUserRole.value.label})",
+                changedRole = currentUserRole.value.roleTitle,
+                timestamp = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault()).format(Date()),
+                reviewNote = "Report logged in system via mobile intake gateway.",
+                actionTaken = "Initial Submission Intake"
             )
 
             barrierReportDao.insertReport(BarrierReportEntity.fromModel(newReport))
+            reportStatusHistoryDao.insertHistoryItem(ReportStatusHistoryEntity.fromModel(initialHistory))
+
             _isReportDialogOpen.value = false
             _prefilledLocationForReport.value = null
-            _feedbackMessage.value = "Your report has been submitted for review."
-            addRecentlyUsed("Barrier Report: $title", locationName, AppScreen.REPORTS)
+            _feedbackMessage.value = "Your report has been submitted with reference ${newReport.id}."
+            addRecentlyUsed("Barrier Report: $trimmedTitle", trimmedLoc, AppScreen.REPORTS)
         }
     }
 
+    fun updateReportStatus(
+        reportId: String,
+        newStatus: BarrierStatus,
+        reviewNote: String,
+        actionTaken: String,
+        flagConflict: Boolean = false
+    ) {
+        // Role-based authorization check
+        if (!currentUserRole.value.canReviewReports) {
+            _feedbackMessage.value = "Unauthorized: Only Field Reviewers or Administrators can update report status."
+            return
+        }
+
+        val trimmedNote = reviewNote.trim()
+        if (trimmedNote.length < 5) {
+            _feedbackMessage.value = "Please provide an explanatory review note of at least 5 characters."
+            return
+        }
+
+        viewModelScope.launch {
+            val currentReport = _barrierReports.value.find { it.id == reportId }
+            if (currentReport == null) {
+                _feedbackMessage.value = "Report not found."
+                return@launch
+            }
+
+            val timestampStr = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault()).format(Date())
+            val historyItem = ReportStatusHistoryItem(
+                id = "hist-${UUID.randomUUID().toString().take(8)}",
+                reportId = reportId,
+                fromStatus = currentReport.status,
+                toStatus = newStatus,
+                changedBy = if (currentUserRole.value == UserRole.SYSTEM_ADMIN) "Platform Administrator" else "Certified Accessibility Auditor",
+                changedRole = currentUserRole.value.roleTitle,
+                timestamp = timestampStr,
+                reviewNote = trimmedNote,
+                actionTaken = actionTaken.trim().ifEmpty { "Status updated to ${newStatus.label}" }
+            )
+
+            val updatedReport = currentReport.copy(
+                status = newStatus,
+                statusNotes = trimmedNote,
+                hasConflictWithOfficialAudit = flagConflict,
+                resolutionEstimate = if (newStatus == BarrierStatus.RESOLVED) "Resolved on $timestampStr"
+                else if (newStatus == BarrierStatus.UNABLE_TO_VERIFY) "Closed: Condition could not be confirmed"
+                else currentReport.resolutionEstimate
+            )
+
+            barrierReportDao.insertReport(BarrierReportEntity.fromModel(updatedReport))
+            reportStatusHistoryDao.insertHistoryItem(ReportStatusHistoryEntity.fromModel(historyItem))
+
+            // Update in-memory state as well
+            _barrierReports.value = _barrierReports.value.map { if (it.id == reportId) updatedReport else it }
+            _statusHistory.value = listOf(historyItem) + _statusHistory.value
+            _feedbackMessage.value = "Status updated to \"${newStatus.label}\" with recorded audit trail."
+        }
+    }
+
+    fun toggleConflictOnPlace(placeId: String, hasConflict: Boolean, conflictDescription: String?) {
+        if (!currentUserRole.value.canFlagConflicts) {
+            _feedbackMessage.value = "Unauthorized: Only Reviewers or Administrators can flag facility conflicts."
+            return
+        }
+        _places.value = _places.value.map { place ->
+            if (place.id == placeId) {
+                place.copy(
+                    hasConflict = hasConflict,
+                    conflictDescription = if (hasConflict) conflictDescription ?: "Reported barrier under verification" else null
+                )
+            } else {
+                place
+            }
+        }
+        _feedbackMessage.value = if (hasConflict) "Facility conflict flagged for re-inspection." else "Conflict cleared."
+    }
+
     fun deleteBarrierReport(report: BarrierReport) {
+        // Check withdrawal authorization: user can withdraw own report, or admin can delete any
+        if (!report.isUserSubmitted && !currentUserRole.value.canDeleteAnyReport) {
+            _feedbackMessage.value = "System audit records can only be removed by a System Administrator."
+            return
+        }
         viewModelScope.launch {
             barrierReportDao.deleteReport(BarrierReportEntity.fromModel(report))
+            reportStatusHistoryDao.deleteHistoryForReport(report.id)
             _barrierReports.value = _barrierReports.value.filter { it.id != report.id }
-            _feedbackMessage.value = "Report removed."
+            _feedbackMessage.value = "Report \"${report.title}\" has been withdrawn."
         }
     }
 
@@ -654,16 +863,41 @@ class AccessBridgeViewModel(application: Application) : AndroidViewModel(applica
         preferencesRepository.updateReducedMotion(enabled)
     }
 
+    fun setKeyboardFriendly(enabled: Boolean) {
+        preferencesRepository.updateKeyboardFriendly(enabled)
+    }
+
+    fun setReduceUnnecessarySteps(enabled: Boolean) {
+        preferencesRepository.updateReduceSteps(enabled)
+    }
+
     fun setPreferredLanguage(language: AppLanguage) {
         preferencesRepository.updatePreferredLanguage(language)
+    }
+
+    fun setSpokenOutputEnabled(enabled: Boolean) {
+        preferencesRepository.updateSpokenOutputEnabled(enabled)
     }
 
     fun setSpeechRate(rate: Float) {
         preferencesRepository.updateSpeechRate(rate)
     }
 
+    fun setVoiceTone(tone: TtsVoiceTone) {
+        preferencesRepository.updateVoiceTone(tone)
+    }
+
     fun setHapticFeedback(enabled: Boolean) {
         preferencesRepository.updateHapticFeedback(enabled)
+    }
+
+    fun toggleFacilityRequirement(facilityKey: String) {
+        preferencesRepository.toggleFacilityRequirement(facilityKey)
+    }
+
+    fun savePreferences(updated: AccessibilityPreferences) {
+        preferencesRepository.saveAll(updated)
+        _feedbackMessage.value = "Preferences saved securely to this device."
     }
 
     fun resetPreferences() {

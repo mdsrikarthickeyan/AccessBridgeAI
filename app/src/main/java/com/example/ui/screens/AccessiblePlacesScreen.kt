@@ -94,6 +94,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.example.model.AccessibilityPreferences
 import com.example.model.AccessiblePlace
 import com.example.model.PlaceType
 import com.example.model.VerificationStatus
@@ -123,6 +124,7 @@ fun AccessiblePlacesScreen(
     wheelchairOnly: Boolean,
     tactileOnly: Boolean,
     bookmarkedPlaceIds: Set<String>,
+    preferences: AccessibilityPreferences = AccessibilityPreferences(),
     onSelectPlace: (AccessiblePlace?) -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onSelectType: (PlaceType) -> Unit,
@@ -227,7 +229,15 @@ fun AccessiblePlacesScreen(
                         matchesTactile && matchesStepFree && matchesLift && matchesToilet &&
                         matchesRoute && matchesBraille && matchesAudio && matchesVisual &&
                         matchesParking && matchesSignLang
-            }
+            }.sortedWith(
+                compareByDescending<AccessiblePlace> { place ->
+                    if (preferences.hasAnyFacilityRequirement()) {
+                        preferences.calculatePlaceMatchScore(place)
+                    } else {
+                        if (place.verificationStatus == VerificationStatus.VERIFIED) 1 else 0
+                    }
+                }.thenByDescending { it.verificationStatus == VerificationStatus.VERIFIED }
+            )
         }
     }
 
@@ -294,7 +304,36 @@ fun AccessiblePlacesScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        // Access Passport Prioritization Banner if active
+        if (preferences.hasAnyFacilityRequirement()) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "⭐ Access Passport Active:",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Ranking ${preferences.activeRequirementCount()} prioritized facilities first",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Search Field Labelled "Where would you like to go?"
         OutlinedTextField(
@@ -482,6 +521,7 @@ fun AccessiblePlacesScreen(
                     selectedPlace = selectedPlace,
                     bookmarkedPlaceIds = bookmarkedPlaceIds,
                     userLocation = userLocationCoordinates,
+                    preferences = preferences,
                     onSelectPlace = onSelectPlace,
                     onToggleBookmarkPlace = onToggleBookmarkPlace,
                     onResetFilters = {
@@ -535,6 +575,7 @@ fun AccessiblePlacesScreen(
                         selectedPlace = selectedPlace,
                         bookmarkedPlaceIds = bookmarkedPlaceIds,
                         userLocation = userLocationCoordinates,
+                        preferences = preferences,
                         onSelectPlace = onSelectPlace,
                         onToggleBookmarkPlace = onToggleBookmarkPlace,
                         onResetFilters = {
@@ -664,6 +705,7 @@ private fun PlacesListSection(
     selectedPlace: AccessiblePlace?,
     bookmarkedPlaceIds: Set<String>,
     userLocation: Pair<Double, Double>?,
+    preferences: AccessibilityPreferences = AccessibilityPreferences(),
     onSelectPlace: (AccessiblePlace?) -> Unit,
     onToggleBookmarkPlace: (String) -> Unit,
     onResetFilters: () -> Unit,
@@ -695,6 +737,7 @@ private fun PlacesListSection(
                     isBookmarked = isBookmarked,
                     isSelected = isSelected,
                     distanceKm = distanceKm,
+                    preferences = preferences,
                     onToggleBookmark = { onToggleBookmarkPlace(place.id) },
                     onClick = { onSelectPlace(place) }
                 )
@@ -709,6 +752,7 @@ private fun PlaceItemCard(
     isBookmarked: Boolean,
     isSelected: Boolean,
     distanceKm: Double?,
+    preferences: AccessibilityPreferences = AccessibilityPreferences(),
     onToggleBookmark: () -> Unit,
     onClick: () -> Unit
 ) {
@@ -793,6 +837,51 @@ private fun PlaceItemCard(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
+
+            if (preferences.hasAnyFacilityRequirement() && preferences.calculatePlaceMatchScore(place) > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                ) {
+                    Text(
+                        text = "⭐ Matches your Access Passport (${preferences.calculatePlaceMatchScore(place)} pts)",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            if (place.hasConflict) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Conflict Flagged: Visitor report differs from audit; pending re-inspection",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(3.dp))
 
@@ -976,6 +1065,47 @@ private fun PlaceDetailDialog(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
+                    }
+                }
+
+                if (place.hasConflict) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Conflicting Community Report Flagged",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = place.conflictDescription ?: "A recent visitor report disagrees with past audit data. Neither claim is presented as confirmed until re-inspected.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Policy: Claim held in review pending physical re-audit.",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
 

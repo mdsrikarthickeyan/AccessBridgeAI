@@ -54,6 +54,7 @@ class TtsManager(context: Context) {
         text: String,
         language: AppLanguage = AppLanguage.ENGLISH,
         rate: Float = 1.0f,
+        pitch: Float = 1.0f,
         utteranceId: String = "access_tts_${System.currentTimeMillis()}"
     ) {
         if (!isInitialized || tts == null) return
@@ -77,6 +78,7 @@ class TtsManager(context: Context) {
         }
 
         tts?.setSpeechRate(rate.coerceIn(0.5f, 2.0f))
+        tts?.setPitch(pitch.coerceIn(0.5f, 2.0f))
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
     }
 

@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import com.example.model.DocumentQA
 import com.example.model.ExplainedDocument
 import com.example.model.NoticeCategory
 import kotlinx.coroutines.Dispatchers
@@ -88,32 +87,21 @@ object DocumentOcrService {
             val aiResult = GeminiVisionService.analyzeImageDocument(loadedBitmap, rawTextInput)
             if (aiResult.isSuccess) {
                 val data = aiResult.getOrThrow()
-                val explained = ExplainedDocument(
-                    id = docId,
-                    title = customTitle?.takeIf { it.isNotBlank() } ?: data.title,
+                val simplified = FormSimplifierService.simplifyDocument(
+                    rawText = data.originalExtractedText.ifBlank { rawTextInput ?: "Official Document" },
                     category = category,
-                    originalExtractedText = data.originalExtractedText,
-                    simpleExplanation = data.simpleExplanation,
-                    datesAndTimes = data.datesAndTimes,
-                    directionsAndRooms = data.directionsAndRooms,
-                    requiredDocuments = data.requiredDocuments,
-                    warnings = data.warnings,
-                    contactInfo = data.contactInfo,
+                    customTitle = customTitle ?: data.title,
                     imageUri = imageUri?.toString(),
-                    imageFileName = imageFileName,
-                    isAiAnalyzed = true,
-                    aiProviderNote = "Analyzed with Gemini 3.5 Flash",
-                    dateAdded = currentDate
+                    imageFileName = imageFileName
                 )
-                return@withContext Result.success(explained)
+                return@withContext Result.success(simplified)
             }
         }
 
-        // 3. Robust Local Accessible Parsing Fallback
+        // 3. Robust Local Accessible Parsing & Simplifier
         val textToProcess = when {
             !rawTextInput.isNullOrBlank() -> rawTextInput
             imageUri != null -> {
-                // If an image was provided but Gemini is not configured, generate an informative reading
                 """
                     [Document Image: $imageFileName]
                     The image has been loaded for accessibility review.
@@ -125,31 +113,14 @@ object DocumentOcrService {
             else -> "Public Notice Information"
         }
 
-        val localNotice = NoticeExplainerService.explainNoticeText(textToProcess, category, customTitle)
-
-        val dates = mutableListOf<String>()
-        if (localNotice.deadline != null) dates.add("Date: ${localNotice.deadline}")
-
-        val contacts = localNotice.emergencyContact
-
-        val explained = ExplainedDocument(
-            id = docId,
-            title = customTitle?.takeIf { it.isNotBlank() } ?: localNotice.title,
+        val simplifiedDoc = FormSimplifierService.simplifyDocument(
+            rawText = textToProcess,
             category = category,
-            originalExtractedText = localNotice.originalText,
-            simpleExplanation = localNotice.plainSummary,
-            datesAndTimes = dates,
-            directionsAndRooms = listOf("Main entrance and ground floor priority counter"),
-            requiredDocuments = listOf("Disability Identity Card / UDID or Photo ID"),
-            warnings = listOf("Check closing dates before visiting in person"),
-            contactInfo = contacts,
+            customTitle = customTitle,
             imageUri = imageUri?.toString(),
-            imageFileName = imageFileName,
-            isAiAnalyzed = false,
-            aiProviderNote = "Analyzed with local accessibility reader. You can add a Gemini API key in AI Studio Secrets for advanced cloud recognition.",
-            dateAdded = currentDate
+            imageFileName = imageFileName
         )
 
-        Result.success(explained)
+        Result.success(simplifiedDoc)
     }
 }

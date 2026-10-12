@@ -246,9 +246,10 @@ fun VerificationBadge(status: VerificationStatus, modifier: Modifier = Modifier)
 fun BarrierStatusBadge(status: BarrierStatus, modifier: Modifier = Modifier) {
     val (bgColor, textColor, icon) = when (status) {
         BarrierStatus.RESOLVED -> Triple(AccessibleGreenContainer, AccessibleGreenText, Icons.Default.CheckCircle)
-        BarrierStatus.IN_PROGRESS -> Triple(AccessibleBlueContainer, AccessibleBlueText, Icons.Default.PendingActions)
-        BarrierStatus.UNDER_REVIEW -> Triple(AccessibleAmberContainer, AccessibleAmberText, Icons.Default.Schedule)
-        BarrierStatus.SUBMITTED -> Triple(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant, Icons.Default.Info)
+        BarrierStatus.BEING_CHECKED -> Triple(AccessibleBlueContainer, AccessibleBlueText, Icons.Default.PendingActions)
+        BarrierStatus.WAITING_FOR_REVIEW -> Triple(AccessibleAmberContainer, AccessibleAmberText, Icons.Default.Schedule)
+        BarrierStatus.RECEIVED -> Triple(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant, Icons.Default.Info)
+        BarrierStatus.UNABLE_TO_VERIFY -> Triple(AccessibleRed.copy(alpha = 0.15f), AccessibleRed, Icons.Default.WarningAmber)
     }
 
     Surface(
@@ -286,87 +287,116 @@ fun BarrierProgressTimeline(
     modifier: Modifier = Modifier
 ) {
     val stages = listOf(
-        BarrierStatus.SUBMITTED to "Submitted",
-        BarrierStatus.UNDER_REVIEW to "Under Review",
-        BarrierStatus.IN_PROGRESS to "In Progress",
+        BarrierStatus.RECEIVED to "Received",
+        BarrierStatus.WAITING_FOR_REVIEW to "Waiting",
+        BarrierStatus.BEING_CHECKED to "Checking",
         BarrierStatus.RESOLVED to "Resolved"
     )
 
     val currentIndex = when (currentStatus) {
-        BarrierStatus.SUBMITTED -> 0
-        BarrierStatus.UNDER_REVIEW -> 1
-        BarrierStatus.IN_PROGRESS -> 2
+        BarrierStatus.RECEIVED -> 0
+        BarrierStatus.WAITING_FOR_REVIEW -> 1
+        BarrierStatus.BEING_CHECKED -> 2
         BarrierStatus.RESOLVED -> 3
+        BarrierStatus.UNABLE_TO_VERIFY -> -1
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+    if (currentStatus == BarrierStatus.UNABLE_TO_VERIFY) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = AccessibleRed.copy(alpha = 0.12f),
+            border = BorderStroke(1.dp, AccessibleRed.copy(alpha = 0.35f)),
+            modifier = modifier.fillMaxWidth()
         ) {
-            stages.forEachIndexed { index, (stage, label) ->
-                val isCompleted = index <= currentIndex
-                val isCurrent = index == currentIndex
-
-                // Node circle
-                Surface(
-                    shape = CircleShape,
-                    color = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(
-                        1.5.dp,
-                        if (isCurrent) MaterialTheme.colorScheme.secondary else if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                    ),
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (isCompleted && index < currentIndex) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        } else {
-                            Text(
-                                text = "${index + 1}",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isCompleted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                // Connector line
-                if (index < stages.lastIndex) {
-                    val lineColor = if (index < currentIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(3.dp)
-                            .background(lineColor)
-                    )
-                }
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.WarningAmber,
+                    contentDescription = null,
+                    tint = AccessibleRed,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Review outcome: Unable to verify physical condition or details",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = AccessibleRed,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
+    } else {
+        Column(modifier = modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                stages.forEachIndexed { index, (stage, label) ->
+                    val isCompleted = index <= currentIndex
+                    val isCurrent = index == currentIndex
 
-        Spacer(modifier = Modifier.height(6.dp))
+                    // Node circle
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(
+                            1.5.dp,
+                            if (isCurrent) MaterialTheme.colorScheme.secondary else if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                        ),
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            if (isCompleted && index < currentIndex) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            } else {
+                                Text(
+                                    text = "${index + 1}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isCompleted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
 
-        // Labels row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            stages.forEachIndexed { index, (_, label) ->
-                val isCurrent = index == currentIndex
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(72.dp)
-                )
+                    // Connector line
+                    if (index < stages.lastIndex) {
+                        val lineColor = if (index < currentIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(3.dp)
+                                .background(lineColor)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Labels row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                stages.forEachIndexed { index, (_, label) ->
+                    val isCurrent = index == currentIndex
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(72.dp)
+                    )
+                }
             }
         }
     }

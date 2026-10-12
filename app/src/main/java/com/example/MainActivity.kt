@@ -117,6 +117,7 @@ class MainActivity : ComponentActivity() {
                                 val recentlyUsed by viewModel.recentlyUsed.collectAsStateWithLifecycle()
                                 HomeScreen(
                                     recentlyUsed = recentlyUsed,
+                                    preferences = preferences,
                                     onNavigate = { screen -> viewModel.navigateTo(screen) },
                                     onQuickToggleContrast = {
                                         viewModel.setHighContrast(!preferences.highContrast)
@@ -161,7 +162,10 @@ class MainActivity : ComponentActivity() {
                                     onToggleSave = { viewModel.toggleSaveCurrentDocument() },
                                     onResetScan = { viewModel.resetScanToNew() },
                                     onSpeak = { text -> viewModel.speakText(text) },
-                                    onStopSpeaking = { viewModel.stopSpeaking() }
+                                    onStopSpeaking = { viewModel.stopSpeaking() },
+                                    onToggleChecklistItem = { id -> viewModel.toggleChecklistItem(id) },
+                                    onAddChecklistItem = { text -> viewModel.addPersonalChecklistItem(text) },
+                                    onRemoveChecklistItem = { id -> viewModel.removePersonalChecklistItem(id) }
                                 )
                             }
 
@@ -184,6 +188,7 @@ class MainActivity : ComponentActivity() {
                                     wheelchairOnly = wheelchairOnly,
                                     tactileOnly = tactileOnly,
                                     bookmarkedPlaceIds = bookmarkedPlaceIds,
+                                    preferences = preferences,
                                     onSelectPlace = { place -> viewModel.selectPlace(place) },
                                     onSearchQueryChange = { query -> viewModel.setPlacesSearchQuery(query) },
                                     onSelectType = { type -> viewModel.setPlaceTypeFilter(type) },
@@ -242,17 +247,25 @@ class MainActivity : ComponentActivity() {
                                 val statusFilter by viewModel.selectedReportStatusFilter.collectAsStateWithLifecycle()
                                 val isDialogOpen by viewModel.isReportDialogOpen.collectAsStateWithLifecycle()
                                 val prefilledLocation by viewModel.prefilledLocationForReport.collectAsStateWithLifecycle()
+                                val currentUserRole by viewModel.currentUserRole.collectAsStateWithLifecycle()
+                                val statusHistory by viewModel.statusHistory.collectAsStateWithLifecycle()
 
                                 BarrierReportsScreen(
                                     reports = reports,
                                     statusFilter = statusFilter,
                                     isDialogOpen = isDialogOpen,
                                     prefilledLocation = prefilledLocation,
+                                    currentUserRole = currentUserRole,
+                                    statusHistory = statusHistory,
                                     onFilterStatus = { filter -> viewModel.setReportStatusFilter(filter) },
                                     onOpenDialog = { viewModel.openReportDialog() },
                                     onCloseDialog = { viewModel.closeReportDialog() },
-                                    onSubmitReport = { title, cat, loc, city, details, sev ->
-                                        viewModel.submitNewBarrierReport(title, cat, loc, city, details, sev)
+                                    onSwitchUserRole = { role -> viewModel.setUserRole(role) },
+                                    onSubmitReport = { title, cat, loc, city, details, sev, contact, img ->
+                                        viewModel.submitNewBarrierReport(title, cat, loc, city, details, sev, contact, img)
+                                    },
+                                    onUpdateReportStatus = { reportId, newStatus, note, action, conflict ->
+                                        viewModel.updateReportStatus(reportId, newStatus, note, action, conflict)
                                     },
                                     onDeleteReport = { report -> viewModel.deleteBarrierReport(report) }
                                 )
@@ -265,9 +278,15 @@ class MainActivity : ComponentActivity() {
                                     onSetFontScale = { scale -> viewModel.setFontScale(scale) },
                                     onSetDyslexiaSpacing = { enabled -> viewModel.setDyslexiaSpacing(enabled) },
                                     onSetReducedMotion = { enabled -> viewModel.setReducedMotion(enabled) },
+                                    onSetKeyboardFriendly = { enabled -> viewModel.setKeyboardFriendly(enabled) },
+                                    onSetReduceUnnecessarySteps = { enabled -> viewModel.setReduceUnnecessarySteps(enabled) },
                                     onSetLanguage = { lang -> viewModel.setPreferredLanguage(lang) },
+                                    onSetSpokenOutputEnabled = { enabled -> viewModel.setSpokenOutputEnabled(enabled) },
                                     onSetSpeechRate = { rate -> viewModel.setSpeechRate(rate) },
+                                    onSetVoiceTone = { tone -> viewModel.setVoiceTone(tone) },
                                     onSetHaptic = { enabled -> viewModel.setHapticFeedback(enabled) },
+                                    onToggleFacilityRequirement = { key -> viewModel.toggleFacilityRequirement(key) },
+                                    onSavePreferences = { prefs -> viewModel.savePreferences(prefs) },
                                     onTestSpeech = { viewModel.testSpeech() },
                                     onResetDefaults = { viewModel.resetPreferences() }
                                 )

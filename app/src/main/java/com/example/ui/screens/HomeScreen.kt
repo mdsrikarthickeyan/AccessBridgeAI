@@ -54,6 +54,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.model.AccessibilityPreferences
+import com.example.model.AppLanguage
 import com.example.ui.components.AccessibleCard
 import com.example.ui.components.AccessibleConfirmationDialog
 import com.example.ui.viewmodel.AppScreen
@@ -62,6 +64,7 @@ import com.example.ui.viewmodel.RecentlyUsedItem
 @Composable
 fun HomeScreen(
     recentlyUsed: List<RecentlyUsedItem>,
+    preferences: AccessibilityPreferences = AccessibilityPreferences(),
     onNavigate: (AppScreen) -> Unit,
     onQuickToggleContrast: () -> Unit,
     onClearRecentlyUsed: () -> Unit,
@@ -103,6 +106,77 @@ fun HomeScreen(
             onQuickToggleContrast = onQuickToggleContrast,
             isHighContrast = isHighContrast
         )
+
+        // Access Passport Personalization Card if user configured facility requirements
+        if (preferences.hasAnyFacilityRequirement()) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Card(
+                onClick = { onNavigate(AppScreen.PLACES) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "My Access Passport Active",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.secondary
+                            ) {
+                                Text(
+                                    text = "${preferences.activeRequirementCount()} set",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondary,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Prioritizing: ${preferences.getActiveFacilityLabels().take(3).joinToString(", ")}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "View matching places",
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(22.dp))
 
